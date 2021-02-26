@@ -6,37 +6,7 @@ var users = new Discord.Collection();
 var server;
 var voiceChannels = [];
 
-bot.on('ready', () => {
-    console.log(`Logged in as ${bot.user.tag}!`);
-
-    server = bot.guilds.cache.find((guild) => {
-        if(guild.name === 'BotTest'){
-            return guild;
-        }
-    });
-
-    server.channels.cache.forEach(channel => {
-        if(channel.type === 'voice'){
-            voiceChannels.push(channel);
-        }
-    });
-});
-
-// Handle messages
-bot.on('message', msg => {
-    if (msg.content === 'users'){
-        msg.delete();
-        voiceChannels.forEach(vChannel => {
-            vChannel.members.forEach(member => {
-                console.log(member.displayName);
-            });
-        });
-    }
-});
-
-// Check if user left or new joined
-bot.setInterval(() => {
-    if(!server) return;
+function updateTimer(){
     voiceChannels.forEach(vChannel => {
         vChannel.members.forEach(member => {
             if(!users.has(member.id) && !member.user.bot){
@@ -76,6 +46,43 @@ bot.setInterval(() => {
             member.workTime += 1;
         }
     });
+}
+
+bot.on('ready', () => {
+    console.log(`Logged in as ${bot.user.tag}!`);
+
+    server = bot.guilds.cache.find((guild) => {
+        if(guild.name === 'BotTest'){
+            return guild;
+        }
+    });
+
+    server.channels.cache.forEach(channel => {
+        if(channel.type === 'voice'){
+            voiceChannels.push(channel);
+        }
+    });
+
+    // Initial user count
+    updateTimer();
+});
+
+// Handle messages
+bot.on('message', msg => {
+    if (msg.content === 'users'){
+        msg.delete();
+        voiceChannels.forEach(vChannel => {
+            vChannel.members.forEach(member => {
+                console.log(member.displayName);
+            });
+        });
+    }
+});
+
+// Check if user left or new joined
+bot.setInterval(() => {
+    if(!server) return;
+    updateTimer();
 }, 60000)
 
 bot.login(process.env.BOT_SECRET);
