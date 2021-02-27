@@ -10,7 +10,8 @@ function updateTimer(){
     voiceChannels.forEach(vChannel => {
         vChannel.members.forEach(member => {
             if(!users.has(member.id) && !member.user.bot){
-                users.set(member.id, {user: member, workTime: 0, isOnServer: true})
+                users.set(member.id, {user: member, workTime: 0, isOnServer: true});
+                console.log(`${member.user.username} joined for the first time`)
             } else if(users.has(member.id) && !users.get(member.id).isOnServer) {
                 console.log(`${member.user.username} returned to the server :)`);
                 users.get(member.id).isOnServer = true;
@@ -83,6 +84,6 @@ bot.on('message', msg => {
 bot.setInterval(() => {
     if(!server) return;
     updateTimer();
-}, 60000)
+}, 10000)
 
 bot.login(process.env.BOT_SECRET);
