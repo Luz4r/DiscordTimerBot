@@ -1,5 +1,5 @@
 {
-  "name": "timeronserver",
+  "name": "worktimecounter",
   "version": "1.0.0",
   "description": "Discord bot for counting connected time",
   "main": "bot.js",

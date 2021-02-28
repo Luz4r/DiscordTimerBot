@@ -5,7 +5,9 @@ require('dotenv').config();
 var users = new Discord.Collection();
 var server;
 var voiceChannels = [];
+var botChannel;
 var today = new Date();
+var botMessage = "React on this message if you want to count your online time on this discord server";
 
 function getStringDate(inDate){
     let day = ("0" + inDate.getDate()).slice(-2);
@@ -41,14 +43,14 @@ function updateTimer(){
         });
 
         if(hasLeft){
-            let date = getStringDate(today)
+            //let date = getStringDate(today)
 
-            let hours = Math.floor(member.workTime / 60);
-            let minutes = member.workTime - hours * 60;
+            //let hours = Math.floor(member.workTime / 60);
+            //let minutes = member.workTime - hours * 60;
 
             // If left, send him today's work time
             console.log(`${member.user.displayName} left the server`);
-            member.user.send(`You have started working today at: ${member.joinTime}\n[${date}] Work time: ${hours} h ${minutes} min`);
+            //member.user.send(`You have started working today at: ${member.joinTime}\n[${date}] Work time: ${hours} h ${minutes} min`);
             member.isOnServer = false;
         } else{
             // Increment work time
@@ -59,6 +61,7 @@ function updateTimer(){
 
 bot.on('ready', () => {
     console.log(`Logged in as ${bot.user.tag}!`);
+    console.log(`Bot started on ${getStringDate(today)}`)
 
     server = bot.guilds.cache.find((guild) => {
         if(guild.name === 'BotTest'){
@@ -66,22 +69,65 @@ bot.on('ready', () => {
         }
     });
 
+    if(!server) return;
+
     server.channels.cache.forEach(channel => {
         if(channel.type === 'voice'){
             voiceChannels.push(channel);
         }
     });
 
-    console.log(`Bot started on ${getStringDate(today)}`)
+    server.channels.cache.each(channel => {
+        if(channel.name === 'timer-bot' && channel.isText()){
+            botChannel = channel;
+        }
+    });
+
+    if(!botChannel) { console.log("Can't find timer-bot text channel on server!"); return; }
+    botChannel.messages.fetch()
+            .then( messages => {
+                let isThereAMessage = false;
+
+                messages.each( message => {
+                    if(message.content === botMessage && message.author.id === bot.user.id){
+                        isThereAMessage = true;
+                    }
+                });
+
+                if(!isThereAMessage || messages.size < 1){
+                    botChannel.send(botMessage)
+                        .then(message => { message.react("👍"); })
+                        .catch(console.error);
+                }
+            })
+            .catch(console.error);
 
     // Initial user count
     updateTimer();
 });
 
+bot.on('messageReactionAdd', ( reaction, user ) => {
+    if(user.bot) return;
+    if(!botChannel) return;
+    if(reaction.message.channel === botChannel){
+        console.log(user.id);
+    }
+});
+
 // Handle messages
 bot.on('message', msg => {
     if(msg.channel.name === 'timer-bot'){
-        
+        if(msg.content === "!time"){
+            let member = users.get(msg.author.id);
+            let date = getStringDate(today)
+
+            let hours = Math.floor(member.workTime / 60);
+            let minutes = member.workTime - hours * 60;
+
+            msg.author.send(`You have started working today at: ${member.joinTime}\n[${date}] Work time: ${hours} h ${minutes} min`);
+            msg.delete()
+                .catch(console.error);
+        }
     }
     if (msg.content === 'users'){
         msg.delete();
