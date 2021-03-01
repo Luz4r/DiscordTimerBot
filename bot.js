@@ -23,7 +23,8 @@ function updateTimer(){
     voiceChannels.forEach(vChannel => {
         vChannel.members.forEach(member => {
             if(!users.has(member.id) && !member.user.bot && activeUsers.includes(member.id)){
-                users.set(member.id, {user: member, workTime: 0, isOnServer: true, joinTime: today.getHours() + ":" + today.getMinutes()});
+                let now = new Date();
+                users.set(member.id, {user: member, workTime: 0, isOnServer: true, joinTime: now.getHours() + 1 + ":" + now.getMinutes()});
                 console.log(`${member.user.username} joined for the first time today`)
             } else if(users.has(member.id) && !users.get(member.id).isOnServer) {
                 console.log(`${member.user.username} returned to the server`);
@@ -82,7 +83,7 @@ bot.on('ready', () => {
         }
     });
 
-    if(!server) return;
+    if(!server) return; 
 
     server.channels.cache.forEach(channel => {
         if(channel.type === 'voice'){
