@@ -8,7 +8,7 @@ var server;
 var voiceChannels = [];
 var botChannel;
 var today = new Date();
-var botMessage = "React on this message if you want to count your online time on this discord server";
+var botMessage = "React on this message if you want to count your online time on this discord server\nType \"!time\" and I will send YOU your working time now";
 var activeUsers = [];
 
 function getStringDate(inDate){
