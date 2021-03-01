@@ -7,7 +7,6 @@ var users = new Discord.Collection();
 var server;
 var voiceChannels = [];
 var botChannel;
-var serverName = 'VR';
 var today = new Date();
 var botMessage = "React on this message if you want to count your online time on this discord server";
 var activeUsers = [];
@@ -78,7 +77,7 @@ bot.on('ready', () => {
     });
 
     server = bot.guilds.cache.find((guild) => {
-        if(guild.name === serverName){
+        if(guild.name === process.env.SERVER_NAME){
             return guild;
         }
     });
