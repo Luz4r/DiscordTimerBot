@@ -1,13 +1,16 @@
 const Discord = require('discord.js');
 const bot = new Discord.Client();
 require('dotenv').config();
+var fs = require('fs');
 
 var users = new Discord.Collection();
 var server;
 var voiceChannels = [];
 var botChannel;
+var serverName = 'VR';
 var today = new Date();
 var botMessage = "React on this message if you want to count your online time on this discord server";
+var activeUsers = [];
 
 function getStringDate(inDate){
     let day = ("0" + inDate.getDate()).slice(-2);
@@ -20,7 +23,7 @@ function getStringDate(inDate){
 function updateTimer(){
     voiceChannels.forEach(vChannel => {
         vChannel.members.forEach(member => {
-            if(!users.has(member.id) && !member.user.bot){
+            if(!users.has(member.id) && !member.user.bot && activeUsers.includes(member.id)){
                 users.set(member.id, {user: member, workTime: 0, isOnServer: true, joinTime: today.getHours() + ":" + today.getMinutes()});
                 console.log(`${member.user.username} joined for the first time today`)
             } else if(users.has(member.id) && !users.get(member.id).isOnServer) {
@@ -48,8 +51,8 @@ function updateTimer(){
             //let hours = Math.floor(member.workTime / 60);
             //let minutes = member.workTime - hours * 60;
 
-            // If left, send him today's work time
             console.log(`${member.user.displayName} left the server`);
+            // If left, send him today's work time
             //member.user.send(`You have started working today at: ${member.joinTime}\n[${date}] Work time: ${hours} h ${minutes} min`);
             member.isOnServer = false;
         } else{
@@ -59,12 +62,23 @@ function updateTimer(){
     });
 }
 
+// Setup after login
 bot.on('ready', () => {
     console.log(`Logged in as ${bot.user.tag}!`);
     console.log(`Bot started on ${getStringDate(today)}`)
 
+    
+    fs.readFile('activeUsers.json', 'utf8', (err, data) => { 
+        if(err){
+            console.error(err);
+        } else {
+            if(!data) return;
+            activeUsers = JSON.parse(data);
+        }
+    });
+
     server = bot.guilds.cache.find((guild) => {
-        if(guild.name === 'BotTest'){
+        if(guild.name === serverName){
             return guild;
         }
     });
@@ -106,18 +120,36 @@ bot.on('ready', () => {
     updateTimer();
 });
 
+// Listen on timer-bot text chat on add reacts
 bot.on('messageReactionAdd', ( reaction, user ) => {
     if(user.bot) return;
     if(!botChannel) return;
-    if(reaction.message.channel === botChannel){
-        console.log(user.id);
+    if(reaction.message.channel === botChannel && !activeUsers.includes(user.id)){
+        activeUsers.push(user.id);
     }
+
+    fs.writeFile('activeUsers.json', JSON.stringify(activeUsers), 'utf8', err => { if(err) console.error(err); });
+});
+
+// Listen on timer-bot text chat on remove reacts
+bot.on('messageReactionRemove', ( reaction, user ) => {
+    if(user.bot) return;
+    if(!botChannel) return;
+    if(reaction.message.channel === botChannel && activeUsers.includes(user.id)){
+        for( var i = 0; i < activeUsers.length; i++){ 
+            if ( activeUsers[i] === user.id) { 
+                activeUsers.splice(i, 1); 
+            }
+        }
+    }
+
+    fs.writeFile('activeUsers.json', JSON.stringify(activeUsers), 'utf8', err => { if(err) console.error(err); });
 });
 
 // Handle messages
 bot.on('message', msg => {
     if(msg.channel.name === 'timer-bot'){
-        if(msg.content === "!time"){
+        if(msg.content === "!time" && users.has(msg.author.id)){
             let member = users.get(msg.author.id);
             let date = getStringDate(today)
 
